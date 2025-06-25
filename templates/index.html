@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <title>Pendeteksi Jumlah Orang</title>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- CSS Eksternal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tampilan.css') }}" />
+    <style>
+        .error-message {
+            color: red;
+            margin-bottom: 10px;
+        }
+        .warning-box {
+            color: white;
+            background-color: #d9534f;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .result-text {
+            font-family: Arial, sans-serif;
+            font-size: 1rem;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Pendeteksi Jumlah Orang | Monitoring Kapasitas Lift</h1>
+        <div class="center">
+            <div class="card">
+                <!-- Kotak peringatan jika melebihi batas -->
+                <div id="warningBox" class="warning-box" style="display: none;">
+                    ⚠️ Peringatan: Batas terlampaui!
+                </div>
+            </div>
+
+        </div>
+    <div class="container">
+
+        <!-- Kolom Kiri: Live Video -->
+        <div class="left">
+
+            <div class="card">
+                <div id="lastUpdate"></div>
+            </div>
+            <div class="card">
+                <h2>Live Video</h2>
+                <img src="{{ url_for('video_feed') }}" id="videoStream" alt="Streaming Kamera tidak tersedia" />
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Kontrol & Hasil -->
+        <div class="right">
+            <div class="card" >
+                <form method="POST" id="cameraForm">
+                    <h2>Pilih Kamera</h2>
+                    <div class="form-group">
+                    <label for="cameraSelect">Pilih kamera:</label>
+                    <select name="camera" id="cameraSelect" required>
+                        {% for c in cams %}
+                            <option value="{{ c }}" {% if c == sel %}selected{% endif %}>Kamera {{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit">Aktifkan Kamera</button>
+            </form>
+            </div>
+            
+
+            <div class="card">
+                <h2>Atur Batas Maksimal</h2>
+                <div class="form-group">
+                    <label for="max_people">Maksimal Orang:</label>
+                    <input type="number" id="max_people" name="max_people" value="{{ max_people }}" min="1" />
+                </div>
+                <div class="form-group">
+                    <label for="max_weight">Maksimal Berat (kg):</label>
+                    <input type="number" id="max_weight" name="max_weight" value="{{ max_weight }}" min="1" step="0.1" />
+                </div>
+                <button id="saveLimits" type="button">Simpan Batas</button>
+            </div>
+
+            <div class="card">
+            <h2>Hasil Deteksi</h2>
+            <div class="result-container">
+                <div id="peopleDisplay" class="result-side"></div>
+                <div id="result" class="result-text result-side">Menunggu hasil...</div>
+            </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+    <!-- Suara -->
+    <audio id="beepSound" src="{{ url_for('static', filename='sound/beep.mp3') }}" preload="auto"></audio>
+
+    <!-- JavaScript Eksternal -->
+    <script src="{{ url_for('static', filename='js/deteksi.js') }}"></script>
+    <script>
+        function updateStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('people_count').textContent = data.people_count;
+                    document.getElementById('total_weight').textContent = data.total_weight.toFixed(2);
+                    document.getElementById('face_count').textContent = data.face_count;
+                    document.getElementById('status').textContent = data.status;
+                    document.getElementById('max_people_limit').textContent = data.max_people_limit;
+                    document.getElementById('max_weight_limit').textContent = data.max_weight_limit.toFixed(2);
+                })
+                .catch(err => {
+                    console.error('Gagal update status:', err);
+                });
+        }
+
+        // Update status setiap 1 detik
+        setInterval(updateStatus, 1000);
+
+        // Jalankan sekali saat load halaman
+        updateStatus();
+    </script>
+</body>
+</html>
