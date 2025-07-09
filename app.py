@@ -84,41 +84,8 @@ age_net = cv2.dnn.readNetFromCaffe('model/berat_badan/age_deploy.prototxt', 'mod
 age_net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
 age_net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 
-AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
-
-def estimate_weight_real(age):
-    data = [
-        (0.5, 7.5), (1, 9.6), (2, 12.2), (3, 14.3), (4, 16.3), (5, 18.3), (6, 20.3), (7, 22.3),
-        (8, 24.3), (9, 26.3), (10, 28.2), (11, 31.5), (12, 34.0), (13, 38.5), (14, 42.0), (15, 47.0),
-        (16, 51.5), (17, 56.0), (18, 65.0), (40, 70.0), (60, 70.0)
-    ]
-    if age <= 0.5:
-        return 7.5
-    if age >= 60:
-        return 70.0
-    for i in range(len(data) - 1):
-        age1, w1 = data[i]
-        age2, w2 = data[i+1]
-        if age1 <= age <= age2:
-            return w1 + (age - age1)/(age2 - age1) * (w2 - w1)
-    return 70.0
-
-def estimate_age(face_img):
-    """
-    Estimasi usia berdasarkan gambar wajah yang sudah di-crop.
-    """
-    try:
-        blob = cv2.dnn.blobFromImage(face_img, 1.0, (227, 227),
-                                     (78.426, 87.769, 114.896), swapRB=False)
-        age_net.setInput(blob)
-        preds = age_net.forward()
-        i = preds[0].argmax()
-        age_range = AGE_LIST[i]
-        low, high = map(int, age_range[1:-1].split('-'))
-        return (low + high) / 2
-    except Exception as e:
-        print(f"[ERROR] Estimasi usia gagal: {e}")
-        return 30
+# AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
+AGE_LIST = [required_files]
 
 def detect_faces_dnn(person_roi):
     """
@@ -143,6 +110,44 @@ def detect_faces_dnn(person_roi):
             if x2 > x1 and y2 > y1:
                 results.append((x1, y1, x2 - x1, y2 - y1))
     return results
+
+def estimate_age(face_img):
+    """
+    Estimasi usia berdasarkan gambar wajah yang sudah di-crop.
+    """
+    try:
+        blob = cv2.dnn.blobFromImage(face_img, 1.0, (227, 227),
+                                     (78.426, 87.769, 114.896), swapRB=False)
+        age_net.setInput(blob)
+        preds = age_net.forward()
+        i = preds[0].argmax()
+        age_range = AGE_LIST[i]
+        low, high = map(int, age_range[1:-1].split('-'))
+        return (low + high) / 2
+    except Exception as e:
+        print(f"[ERROR] Estimasi usia gagal: {e}")
+        return 20
+    
+def estimate_weight_real(age):
+    # data = [
+    #     (0.5, 7.5), (1, 9.6), (2, 12.2), (3, 14.3), (4, 16.3), (5, 18.3), (6, 20.3), (7, 22.3),
+    #     (8, 24.3), (9, 26.3), (10, 28.2), (11, 31.5), (12, 34.0), (13, 38.5), (14, 42.0), (15, 47.0),
+    #     (16, 51.5), (17, 56.0), (18, 65.0), (40, 70.0), (60, 70.0)
+    # ]
+    data = [required_files]
+    
+    if age <= 0.5:
+        return 7.5
+    if age >= 60:
+        return 70.0
+    for i in range(len(data) - 1):
+        age1, w1 = data[i]
+        age2, w2 = data[i+1]
+        if age1 <= age <= age2:
+            return w1 + (age - age1)/(age2 - age1) * (w2 - w1)
+    return 70.0
+
+
 
 def process_frame(frame):
     global last_total_weight, last_count, last_face_count
@@ -227,7 +232,7 @@ def process_frame(frame):
             ages.append(estimate_age(resized))
             cv2.rectangle(roi, (fx, fy), (fx + fw, fy + fh), (0, 255, 255), 1)  # Kotak wajah kuning
 
-        age = (sum(ages) / len(ages)) if ages else 30
+        age = (sum(ages) / len(ages)) if ages else 20
         weight = estimate_weight_real(age)
 
         label = f"ID:{int(obj_id)} Usia:{int(age)} Berat:{weight:.1f}kg Wajah:{face_count_roi}"
@@ -238,7 +243,7 @@ def process_frame(frame):
         count += 1
 
     cv2.putText(frame, f"Tubuh Terdeteksi: {count}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
 
     # Smoothing dengan exponential moving average
     last_total_weight = ALPHA * last_total_weight + (1 - ALPHA) * total_weight
@@ -251,11 +256,6 @@ def process_frame(frame):
     face_count = int(last_face_count)
 
     return frame, people_count, total_weight, face_count
-
-
-
-
-
 
 def gen():
     global frame_detected, count_person, total_weight, count_face, lock
@@ -325,7 +325,7 @@ def capture_frames():
             continue
 
         frame_count += 1
-        if frame_count % 30 == 0:
+        if frame_count % 30 == 0:   
             print(f"[DEBUG] Frames captured: {frame_count}")
 
         time.sleep(0.01)
@@ -379,7 +379,7 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     return Response(gen(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+                    mimetype='multipart/x-mixed-replace; boundary=frame') 
 
 @app.route('/api/status')
 def api_status():
@@ -423,25 +423,6 @@ def set_limits():
         "max_people_limit": max_people_limit,
         "max_weight_limit": max_weight_limit
     })
-
-# @app.route('/api/data')
-# def api_data():
-#     """
-#     Endpoint API untuk mengirim data JSON hasil deteksi terbaru.
-#     """
-#     global people_count, total_weight, face_count, status, max_people_limit, max_weight_limit
-
-#     with lock:
-#         data = {
-#             'people_count': int(people_count),
-#             'total_weight': round(total_weight, 2),
-#             'face_count': int(face_count),
-#             'status': status,
-#             'max_people_limit': max_people_limit,
-#             'max_weight_limit': max_weight_limit
-#         }
-#     return jsonify(data)
-
 
 def initialize_camera():
     """

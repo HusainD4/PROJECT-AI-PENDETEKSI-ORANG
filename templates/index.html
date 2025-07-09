@@ -35,20 +35,36 @@
         .form-group {
             margin-bottom: 15px;
         }
+        @media (max-width: 768px) {
+        .hide-on-mobile {
+            display: none !important;
+        }
+        }
+
+    </style>
+    <style>
+        .judul-mobile {
+            display: none;
+        }
+
+        @media screen and (max-width: 767px) {
+            .judul-desktop {
+            display: none;
+            }
+            .judul-mobile {
+            display: block;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <h1>Pendeteksi Jumlah Orang | Monitoring Kapasitas Lift</h1>
-        <div class="center">
-            <div class="card">
-                <!-- Kotak peringatan jika melebihi batas -->
-                <div id="warningBox" class="warning-box" style="display: none;">
-                    ⚠️ Peringatan: Batas terlampaui!
-                </div>
-            </div>
+    <h1 class="judul-desktop">Pendeteksi Jumlah Orang | Monitoring Kapasitas Lift</h1>
+    <h1 class="judul-mobile">Monitoring Cam</h1>
+            <!-- <div class="center">
 
-        </div>
+
+        </div> -->
     <div class="container">
 
         <!-- Kolom Kiri: Live Video -->
@@ -60,6 +76,12 @@
             <div class="card">
                 <h2>Live Video</h2>
                 <img src="{{ url_for('video_feed') }}" id="videoStream" alt="Streaming Kamera tidak tersedia" />
+            </div>
+                <div class="card">
+                <!-- Kotak peringatan jika melebihi batas -->
+                <div id="warningBox" class="warning-box" style="display: none;">
+                    ⚠️ Peringatan: Batas terlampaui!
+                </div>
             </div>
         </div>
 
@@ -81,7 +103,7 @@
             </div>
             
 
-            <div class="card">
+            <div class="card hide-on-mobile">
                 <h2>Atur Batas Maksimal</h2>
                 <div class="form-group">
                     <label for="max_people">Maksimal Orang:</label>
@@ -100,9 +122,9 @@
                 <div id="peopleDisplay" class="result-side"></div>
                 <div id="result" class="result-text result-side">Menunggu hasil...</div>
             </div>
-
-
             </div>
+
+
 
 
         </div>
